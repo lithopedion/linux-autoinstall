@@ -1,0 +1,230 @@
+bash <<'SCRIPT'
+# Xubuntu 26 - véglegesítés, hibák összegyűjtésével
+# Minden lépés külön fut; a végén összesítés készül.
+
+FAIL=()
+OK=()
+run() {
+    local label="$1"
+    shift
+    printf '\n>>> %s\n' "$label"
+    if "$@"; then
+        OK+=("$label")
+    else
+        FAIL+=("$label")
+        echo "HIBA: $label"
+    fi
+}
+note() { FAIL+=("$1"); echo "KIHAGYVA: $1"; }
+
+DL="$(xdg-user-dir DOWNLOAD 2>/dev/null || printf '%s/Downloads' "$HOME")"
+DESK="$(xdg-user-dir DESKTOP 2>/dev/null || printf '%s/Desktop' "$HOME")"
+WIKI='https://hu.wikipedia.org/wiki/Kezd%C5%91lap'
+POLICY='/usr/lib/firefox-esr/distribution/policies.json'
+mkdir -p "$DESK" "$HOME/.config/gtk-3.0" || true
+
+# 1. Csomagok
+run "Csomaglista frissítése" sudo apt update
+run "Szükséges csomagok telepítése" sudo apt install -y \
+    software-properties-common language-pack-hu language-pack-gnome-hu \
+    language-selector-gnome numix-gtk-theme flatpak viewnior mousepad \
+    python3 xfce4-panel-profiles
+
+# 2. Magyar nyelv
+run "Magyar locale generálása" sudo locale-gen hu_HU.UTF-8
+run "Magyar alapértelmezett nyelv" sudo update-locale LANG=hu_HU.UTF-8
+
+# 3. Ikonok és ablakkeret
+if [ -d /usr/share/icons/elementary-xfce ] || \
+   [ -d /usr/share/icons/elementary-xfce-dark ] || \
+   [ -d /usr/share/icons/elementary ]; then
+    ICON=elementary-xfce
+    [ -d /usr/share/icons/elementary-xfce ] || ICON=elementary
+    run "Elementary ikonok visszaállítása" \
+        xfconf-query -c xsettings -p /Net/IconThemeName --create -t string -s "$ICON"
+else
+    note "Elementary ikoncsomag nem található; az ikontéma változatlan maradt"
+fi
+
+run "Numix ablakkeret beállítása" \
+    xfconf-query -c xfwm4 -p /general/theme --create -t string -s Numix
+run "Kompozitálás kikapcsolása" \
+    xfconf-query -c xfwm4 -p /general/use_compositing --create -t bool -s false
+
+# 4. Thunar oldalsáv CSS - biztonsági mentéssel és duplikáció nélkül
+CSS="$HOME/.config/gtk-3.0/gtk.css"
+if [ -f "$CSS" ] && ! grep -q 'THUNAR-SIDEBAR-32PX' "$CSS"; then
+    cp -a "$CSS" "$CSS.backup.$(date +%Y%m%d%H%M%S)" || true
+fi
+if ! grep -q 'THUNAR-SIDEBAR-32PX' "$CSS" 2>/dev/null; then
+    if printf '\n/* THUNAR-SIDEBAR-32PX */\n.thunar .sidebar image { -gtk-icon-size: 32px; }\n' >> "$CSS"; then
+        OK+=("Thunar oldalsáv CSS beállítás hozzáadva")
+    else
+        FAIL+=("Thunar CSS beállítás")
+    fi
+else
+    OK+=("Thunar CSS beállítás már létezik")
+fi
+
+# 5. Xfce panelmentés visszaállítása
+if [ -f "$DL/panel.tar.bz2" ]; then
+    if command -v xfce4-panel-profiles >/dev/null 2>&1; then
+        run "Xfce panelmentés visszaállítása" \
+            xfce4-panel-profiles load "$DL/panel.tar.bz2"
+    else
+        note "Panelprofil-eszköz nem található"
+    fi
+else
+    note "Hiányzik a panel.tar.bz2 a Letöltések mappából"
+fi
+
+# 6. Sober Flatpak és asztali ikon
+run "Flathub tároló felvétele" \
+    sudo flatpak remote-add --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+run "Sober telepítése" sudo flatpak install --system -y flathub org.vinegarhq.Sober
+
+APP='/var/lib/flatpak/exports/share/applications/org.vinegarhq.Sober.desktop'
+if [ -f "$APP" ]; then
+    if install -D "$APP" "$DESK/org.vinegarhq.Sober.desktop" &&
+       chmod +x "$DESK/org.vinegarhq.Sober.desktop" &&
+       gio set "$DESK/org.vinegarhq.Sober.desktop" metadata::trusted true; then
+        OK+=("Sober asztali ikon")
+    else
+        FAIL+=("Sober asztali ikon")
+    fi
+else
+    note "Sober .desktop fájl nem található"
+fi
+
+# 7. Firefox-házirend: a korábbi beállítások megőrzése
+BOOKMARKS="$DL/bookmarks.html"
+if command -v firefox-esr >/dev/null 2>&1 || [ -d /usr/lib/firefox-esr ]; then
+    if [ -f "$BOOKMARKS" ]; then
+        if sudo mkdir -p /usr/lib/firefox-esr/distribution; then
+            TMP="$(mktemp)"
+            if sudo cat "$POLICY" > "$TMP" 2>/dev/null; then :; else printf '{}' > "$TMP"; fi
+            if python3 - "$TMP" "$BOOKMARKS" "$WIKI" <<'PY'
+import json, sys
+from html.parser import HTMLParser
+
+policy_file, html_file, wiki = sys.argv[1:4]
+try:
+    with open(policy_file, encoding="utf-8") as f:
+        root = json.load(f)
+except Exception:
+    root = {}
+p = root.setdefault("policies", {})
+
+class Parser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.items, self.href, self.title = [], None, []
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "a":
+            self.href = dict(attrs).get("href")
+            self.title = []
+    def handle_data(self, data):
+        if self.href is not None:
+            self.title.append(data)
+    def handle_endtag(self, tag):
+        if tag.lower() == "a" and self.href is not None:
+            title = " ".join("".join(self.title).split())
+            if title and self.href.startswith(("https://", "http://")):
+                self.items.append({"Title": title, "URL": self.href,
+                                   "Placement": "toolbar"})
+            self.href = None
+            self.title = []
+
+parser = Parser()
+with open(html_file, encoding="utf-8", errors="replace") as f:
+    parser.feed(f.read())
+
+p["Homepage"] = {"URL": wiki, "StartPage": "homepage"}
+p["DisplayBookmarksToolbar"] = "always"
+
+search = p.setdefault("SearchEngines", {})
+if not isinstance(search, dict):
+    search = {}
+    p["SearchEngines"] = search
+search["Default"] = "Startpage"
+search["Add"] = [{
+    "Name": "Startpage",
+    "URLTemplate": "https://www.startpage.com/sp/search?query={searchTerms}",
+    "Method": "GET",
+    "Alias": "sp"
+}]
+
+# uBlock Origin megőrzése és kikényszerített telepítése
+extensions = p.setdefault("ExtensionSettings", {})
+if not isinstance(extensions, dict):
+    extensions = {}
+    p["ExtensionSettings"] = extensions
+ub = extensions.get("uBlock0@raymondhill.net", {})
+if not isinstance(ub, dict):
+    ub = {}
+extensions["uBlock0@raymondhill.net"] = {
+    **ub,
+    "installation_mode": "force_installed",
+    "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+}
+
+# Meglévő könyvjelzők megtartása, HTML-linkek hozzáfűzése
+old = p.get("Bookmarks", [])
+if not isinstance(old, list):
+    old = []
+seen = {x.get("URL") for x in old if isinstance(x, dict)}
+for item in parser.items:
+    if item["URL"] not in seen:
+        old.append(item)
+        seen.add(item["URL"])
+p["Bookmarks"] = old
+
+with open(policy_file + ".new", "w", encoding="utf-8") as f:
+    json.dump(root, f, ensure_ascii=False, indent=2)
+    f.write("\n")
+print("Feldolgozott HTML-linkek:", len(parser.items))
+PY
+            then
+                if sudo install -m 0644 "$TMP.new" "$POLICY"; then
+                    OK+=("Firefox-házirend és könyvjelzők")
+                else
+                    FAIL+=("Firefox-házirend telepítése")
+                fi
+                rm -f "$TMP.new"
+            else
+                FAIL+=("Firefox-házirend előállítása")
+            fi
+            rm -f "$TMP"
+        else
+            FAIL+=("Firefox distribution könyvtár")
+        fi
+    else
+        note "Hiányzik a bookmarks.html"
+    fi
+else
+    note "Firefox ESR nem található; Firefox-házirend kihagyva"
+fi
+
+# 8. MIME-hozzárendelések
+run "JPEG megnyitása Viewniorral" xdg-mime default viewnior.desktop image/jpeg
+run "PNG megnyitása Viewniorral" xdg-mime default viewnior.desktop image/png
+run "Szövegfájlok megnyitása Mousepaddel" xdg-mime default mousepad.desktop text/plain
+
+# 9. Összesítés
+printf '\n\n========== VÉGEREDMÉNY ==========\n'
+printf 'Sikeres vagy végrehajtott lépések: %s\n' "${#OK[@]}"
+printf 'Hibák / kihagyott lépések: %s\n' "${#FAIL[@]}"
+
+if [ "${#FAIL[@]}" -gt 0 ]; then
+    printf '\nEllenőrizendő:\n'
+    printf ' - %s\n' "${FAIL[@]}"
+else
+    echo "Minden lépés sikeresen lefutott."
+fi
+
+echo
+echo "Firefox ellenőrzése: about:policies"
+echo "Megjegyzés: a CSS és a panel változásai kijelentkezést vagy újraindítást igényelhetnek."
+SCRIPT
+
