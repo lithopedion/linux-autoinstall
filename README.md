@@ -62,7 +62,7 @@ A nyelvi modell elvitathatatlan érdemei mellett a protectedtext.com is segíts�
 
 # 🎄 Utóirat
 
-A G630 is ember, a gép szerint. Ami téved, de állja a sarat - kevesebbet téved és jobban állja, mint én. Gazdagabb lettem egy zsömlszacskónyi pormacskával.
+A G630 is ember, a gép szerint. Ami téved, de állja a sarat - kevesebbet téved és jobban állja, mint én. Gazdagabb lettem egy zsömlészacskónyi pormacskával.
 És mi történik, ha valami elromlik? Három ágens ücsörög a könyvjelzők között: a gyerek tanul!
 
 sudo apt install happiness
