@@ -12,7 +12,7 @@ A Linux terjesztése, a Roblox megunása, olyan számítógépeket átadni, amel
 A választás a Xubuntu 26 rendszerre esett. Mert nem és nem, nincs vita, a Xubuntu a legjobb, volt, lesz, éppen pont az!
 A Roblox futtatását a Sober biztosítja, ahol a hardveres kompatibilitás ezt lehetővé teszi. Egy gép kivétel: annak CPU-ja nem támogatja az SSE4.2 emulálását, így azon a Sober nem használható.
 
-Két parancssor-szörnyeteg könnyíti meg a munkát, melyeket a nyelvi modellel sikerült összerakni. Gépenként így majdnem 1 óra spórolható meg. A 3 bash-t egyelőre nem sikerült összefűzni, hibázott. De érkezőben néhány laptop, szóval van hová fejlődni.
+Két parancssor-szörnyeteg könnyíti meg a munkát, melyeket a nyelvi modellel sikerült összerakni. Gépenként így majdnem 1 óra spórolható meg. A 3 bash-t egyelőre nem sikerült összefűzni, hibázott. De talán érkezőben néhány laptop, szóval van hová fejlődni.
 
 # 🎅 1. lépés | Xubuntu 26 install Ventoy-jal
 Automatikus beléptetés. 2026 nyári ISO.
@@ -35,7 +35,7 @@ Automatikus beléptetés. 2026 nyári ISO.
 # 🦌 4. lépés | parancssor-szörnyecske
 - sudo apt update && sudo apt install -y 7zip adb audacity cpufrequtils cryptsetup dosfstools exiftool exfatprogs fastboot ffmpeg gparted gvfs gufw heimdall-flash l3afpad lvm2 mpv mtools mtpaint ntfs-3g pcmanfm photoflare rar synaptic thunar-gtkhash thunar-volman ucommon-utils udisks2 unrar unzip usbutils viewnior vlc vnstat wavemon zram-tools yt-dlp
 
-Ne feledjük, a LibreOffice alap a Xubuntu-ban is! Ami sokkal-de sokkal jobb, mint a Word/Excel!
+Ne feledjük, a LibreOffice alap a Xubuntu-ban is! Ami sokkal-de-sokkal jobb, mint a Word/Excel!
 
 # ⭐ 5. lépés | parancssor-szörnyeteg II.
 - Xfce panelprofil visszaállítása egy korábbi mentésből, amit a Letöltések mappába raktunk.
@@ -48,7 +48,7 @@ Ne feledjük, a LibreOffice alap a Xubuntu-ban is! Ami sokkal-de sokkal jobb, mi
 # 🔔 6. lépés | hab a tortán, meteorcsillag, egyeseknél Halálcsillag a karácsonyfa csúcsán
 sudo ufw enable
 
-Ezek percek alatt lefutnak, majd néhány apróság kézzel, mint például a menulibre, videó és hang teszt, Roblox ikon + tesztindítás, Thunar Recent törlése és 32px-es oldalsáv,  AboutMe igazítás..
+Ezek percek alatt lefutnak, majd néhány apróság kézzel, mint például a menulibre, videó és hang teszt, Roblox ikon + tesztindítás, Thunar Recent törlése és 32px-es oldalsáv, AboutMe igazítás..
 
 Ami bekavarhat: a folyamat elején lefutó frissítés. Szépen megkérjük a nyelvi modellt, hátrapakolja..
 
