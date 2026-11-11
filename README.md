@@ -20,6 +20,8 @@ Automatikus beléptetés. 2026 nyári ISO.
 # ⛄ 2. lépés | öt fájl bemásolása a Letöltések mappába:
 - bookmarks.html, birka.png, roblox_icon.png, panel.tar.bz2, Journey_home_by_Juliette_Taka.png
 
+![Journey_home_by_Juliette_Taka.png](Journey_home_by_Juliette_Taka.png)
+
 # ❄️ 3. lépés | parancssor-szörnyeteg I.
 - Magyar nyelvi környezet telepítése.
 - Firefox ESR telepítése Mozilla PPA-ból, Snap Firefox eltávolítása.
