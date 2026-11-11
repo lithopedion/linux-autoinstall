@@ -60,4 +60,3 @@ Mostanság nagyot bukott a Disroot, de példaértékűen kezelik! Alternatívak�
 
 A nyelvi modell elvitathatatlan érdemei mellett a protectedtext.com is segítségemre volt.
 
-![jardang-sziklaszirtek-a-Marson.png](jardang-sziklaszirtek-a-Marson.png)
